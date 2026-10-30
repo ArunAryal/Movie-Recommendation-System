@@ -1,10 +1,16 @@
 # 🎬 Movie Recommendation System
 
+[![Python](https://img.shields.io/badge/Python-3.13%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
+[![pandas](https://img.shields.io/badge/pandas-Data-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Open%20App-2EA44F?logo=streamlit&logoColor=white)](https://top-movie-recommendation-system.streamlit.app/)
+
 A content-based movie recommender built with **Python**, **scikit-learn** and **Streamlit**. Pick a movie you like and the app suggests the five most similar titles, complete with posters fetched from the [TMDB API](https://www.themoviedb.org/).
 
 <!-- Add a screenshot once the app is running: ![App screenshot](docs/screenshot.png) -->
 
-**Live demo:** _add your `https://.streamlit.app` link here after deploying_
+**Live demo:** <https://top-movie-recommendation-system.streamlit.app/>
 
 ---
 
@@ -17,12 +23,7 @@ A content-based movie recommender built with **Python**, **scikit-learn** and **
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
 - [Regenerating the Data](#regenerating-the-data)
-- [Deploying to Streamlit Community Cloud](#deploying-to-streamlit-community-cloud)
-- [Security Notes](#security-notes)
-- [Troubleshooting](#troubleshooting)
-- [Limitations and Future Ideas](#limitations-and-future-ideas)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
+- [Limitations](#limitations)
 
 ---
 
@@ -32,8 +33,7 @@ A content-based movie recommender built with **Python**, **scikit-learn** and **
 - Shows **movie posters** from TMDB (cached for 24 hours, with a local fallback image).
 - **Fast**: about 0.2 s to load the model and a few milliseconds per recommendation.
 - **Lightweight**: no multi-hundred-MB similarity matrix; similarity is computed on demand from a small sparse matrix.
-- Handles titles shared by different movies (for example, the two *Batman* films) by showing their TMDB id.
-- Degrades gracefully: if the API key is missing or TMDB is unreachable, recommendations still work.
+- **Degrades gracefully**: if the API key is missing or TMDB is unreachable, recommendations still work.
 
 ## How It Works
 
@@ -62,8 +62,8 @@ The recommender is **content-based**: it compares what movies are *about*, not w
 
 | Area | Tools |
 |---|---|
-| App / UI | [Streamlit](https://streamlit.io/) |
-| ML / NLP | scikit-learn, NLTK (Porter stemmer, notebook only) |
+| App | [Streamlit](https://streamlit.io/) |
+| ML | scikit-learn, NLTK (Porter stemmer, notebook only) |
 | Data | pandas |
 | Posters | [TMDB API](https://developer.themoviedb.org/) via `requests` |
 | Packaging | [uv](https://docs.astral.sh/uv/) (`pyproject.toml` + `uv.lock`) |
@@ -77,11 +77,11 @@ The recommender is **content-based**: it compares what movies are *about*, not w
 ├── movies_processed.csv            # Preprocessed data: movie_id, title, tags
 ├── movie_recommender_system.ipynb  # Data cleaning, feature engineering, experiments
 ├── pyproject.toml                  # Project metadata and dependencies
-├── uv.lock                         # Locked dependency versions (commit this!)
+├── uv.lock                         # Locked dependency versions
 ├── .python-version                 # Python version used locally
 ├── .streamlit/
-│   ├── config.toml                 # Streamlit settings (safe to commit)
-│   └── secrets.toml                # 🔒 local secrets (git-ignored, never commit)
+│   ├── config.toml                 # Streamlit settings
+│   └── secrets.toml                # 🔒 local secrets (git-ignored)
 ├── .env                            # 🔒 optional local secrets (git-ignored)
 └── dataset/                        # 🔒 raw TMDB CSVs (git-ignored; only needed for the notebook)
     ├── tmdb_5000_movies.csv
@@ -100,8 +100,8 @@ The recommender is **content-based**: it compares what movies are *about*, not w
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/ArunAryal/Movie-Recommendation-System
+cd Movie-Recommendation-System
 
 # 2. Install dependencies into a local virtual environment (.venv)
 uv sync
@@ -150,68 +150,8 @@ You only need this if you want to change how features are built.
 
 > **Important:** merge the two CSVs on the movie **id** (not on `title`), then call `drop_duplicates("movie_id").reset_index(drop=True)`. Merging on title duplicates movies that share a name and leaves gaps in the index, which breaks the lookup in the app.
 
-## Deploying to Streamlit Community Cloud
-
-1. Push the project to a GitHub repository. Make sure these files are committed:
-   `app.py`, `movies_processed.csv`, `pyproject.toml`, **`uv.lock`**, `.streamlit/config.toml`, `.python-version`.
-2. Go to [share.streamlit.io](https://share.streamlit.io/), sign in with GitHub and click **Create app**.
-3. Select your repository and branch, and set the main file path to `app.py`.
-4. Open **Advanced settings**:
-   - **Python version:** choose **3.13** (Community Cloud takes this from the dialog, not from `.python-version`).
-   - **Secrets:** paste `TMDB_API_KEY = "your-key-here"` (TOML format, with quotes).
-5. Click **Deploy**. Pushing new commits to the branch redeploys automatically.
-
-Notes:
-
-- `uv.lock` must be in the repository; Community Cloud uses it to detect a uv project and install exact versions.
-- Free apps go to sleep after about 12 hours without visitors and wake on the next visit.
-- Update secrets later from the app's **Settings → Secrets** panel.
-
-## Security Notes
-
-- **Never commit secrets.** `.env` and `.streamlit/secrets.toml` are listed in `.gitignore`. Verify with:
-  ```bash
-  git check-ignore -v .streamlit/secrets.toml
-  git ls-files | grep -E 'secrets|\.env'   # should print nothing
-  ```
-  If a key was ever committed, regenerate it in your TMDB account.
-- Error details are hidden from visitors (`showErrorDetails = "none"` in `.streamlit/config.toml`), and the app logs only the *type* of a failed TMDB request, never the request URL.
-- Data is stored as CSV rather than pickle, so nothing in the repository is deserialized with `pickle.load`.
-- Poster lookups are cached for 24 hours, which limits how quickly visitors can use up your TMDB quota.
-
-## Troubleshooting
-
-| Symptom | Likely cause and fix |
-|---|---|
-| Warning banner: *"TMDB_API_KEY is not configured"* | The key isn't set. Add it to `.streamlit/secrets.toml` or `.env` (locally) or to the Secrets box (Cloud), then restart the app. |
-| Every poster shows "No poster" | The key is invalid or TMDB is unreachable. Check the logs for `TMDB lookup failed` lines. |
-| `FileNotFoundError: movies_processed.csv` | The CSV isn't in the repo. Commit it (it is small, about 1.6 MB). |
-| Cloud build fails while installing dependencies | Check that `uv.lock` is committed and that Python 3.13 is selected in Advanced settings. |
-| Secrets error on Cloud | Secrets must be valid TOML; string values need quotes: `TMDB_API_KEY = "..."`. |
-| Changes to `secrets.toml` don't show up locally | Restart `streamlit run`; the file is read at startup. |
-
-## Limitations and Future Ideas
-
-**Current limitations**
+## Limitations
 
 - Recommendations are based purely on text metadata. There are no user ratings or viewing history, so results are the same for every user.
 - Only the ~4,800 movies in the TMDB 5000 dataset are available, and the metadata is in English.
 - Bag-of-words ignores word order and meaning (for example, it can't tell that "spaceship" and "starship" are related).
-
-**Ideas for improvement**
-
-- Replace `CountVectorizer` with **TF-IDF** or **sentence embeddings** for semantically richer matches.
-- Add filters (genre, year, rating) and a "surprise me" button.
-- Show extra details per recommendation (overview, release year, rating) using the TMDB API.
-- Add unit tests for `recommend()` and for the TMDB client (with mocked responses).
-
-## Acknowledgements
-
-- Movie metadata: [TMDB 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata) on Kaggle.
-- Posters and live movie data: [The Movie Database (TMDB)](https://www.themoviedb.org/).
-
-> This product uses the TMDB API but is not endorsed or certified by TMDB.
-
-## License
-
-_No license has been chosen yet._ Add a `LICENSE` file (for example [MIT](https://choosealicense.com/licenses/mit/)) and update this section. Without one, the code is "all rights reserved" by default.
